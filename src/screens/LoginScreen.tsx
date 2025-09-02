@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { initPushAfterLogin } from '../push/fcm';
 
 const LoginScreen = ({ navigation }: any) => {
   const [username, setUsername] = useState('');
@@ -29,8 +30,10 @@ const LoginScreen = ({ navigation }: any) => {
       const text = await res.text();
       if (res.ok) {
         const data = JSON.parse(text);
-        await AsyncStorage.setItem('jwtToken', data.token);
-        navigation.replace('Main');
+  await AsyncStorage.setItem('jwtToken', data.token);
+  // Initialize push/FCM after login
+  initPushAfterLogin().catch(()=>{});
+  navigation.replace('Main');
       } else {
         Alert.alert('Login Failed', 'Invalid credentials');
       }

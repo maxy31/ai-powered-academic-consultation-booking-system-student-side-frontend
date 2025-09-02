@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1028138165664",
+    "project_id": "aabookingstudentside",
+    "storage_bucket": "aabookingstudentside.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1028138165664:android:1115abea5c3241a0ce70c5",
+        "android_client_info": {
+          "package_name": "com.fypaabookingprojectapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJK21CW39-gK9N7j934FgHZhuIIe_tf9Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
