@@ -28,12 +28,6 @@ const NotificationsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
-        <Text style={styles.statusText}>Status: {connectionStatus}  |  Unread: {unreadCount}</Text>
-        <TouchableOpacity style={styles.reconnectBtn} onPress={reconnect}>
-          <Text style={styles.reconnectText}>Reconnect</Text>
-        </TouchableOpacity>
-      </View>
       <FlatList
         data={notifications}
         keyExtractor={n => String(n.id)}

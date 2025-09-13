@@ -21,31 +21,54 @@ type RootStackParamList = {
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState<{ studentName: string; username: string } | null>(null);
+  const [latestBooking, setLatestBooking] = useState<{ date: string; startTime: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
-      const fetchProfile = async () => {
+      const fetchProfileAndBooking = async () => {
         setLoading(true);
         try {
           const token = await AsyncStorage.getItem('jwtToken');
-          const res = await fetch('http://10.0.2.2:8080/api/profile/getProfileStudent', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (!res.ok) throw new Error('Failed to fetch profile');
-          const data = await res.json();
-          if (isActive) setProfile(data);
+          if (!token) {
+            throw new Error('Authentication token not found');
+          }
+          
+          // Fetch profile and latest booking in parallel
+          const [profileRes, bookingRes] = await Promise.all([
+            fetch('http://10.0.2.2:8080/api/profile/getProfileStudent', {
+              headers: { 'Authorization': `Bearer ${token}` },
+            }),
+            fetch('http://10.0.2.2:8080/api/appointments/getLatestBooking', {
+              headers: { 'Authorization': `Bearer ${token}` },
+            })
+          ]);
+
+          if (!profileRes.ok) throw new Error('Failed to fetch profile');
+          const profileData = await profileRes.json();
+
+          if (bookingRes.ok) {
+            const bookingData = await bookingRes.json();
+            if (isActive) setLatestBooking(bookingData);
+          } else if (bookingRes.status !== 404) {
+            // Don't throw for 404, it just means no booking
+            throw new Error('Failed to fetch booking');
+          }
+
+          if (isActive) {
+            setProfile(profileData);
+          }
         } catch (err) {
-          Alert.alert('Error', 'Could not fetch profile');
+          if (isActive) {
+            Alert.alert('Error', err instanceof Error ? err.message : 'An unexpected error occurred.');
+          }
         } finally {
           if (isActive) setLoading(false);
         }
       };
-      fetchProfile();
+      fetchProfileAndBooking();
       return () => { isActive = false; };
     }, [])
   );
@@ -105,13 +128,20 @@ const ProfileScreen = () => {
         </View>
         <View style={styles.divider} />
         <View style={styles.bookingSection}>
-          <Text style={styles.bookingTitle}>Booking:</Text>
-          <Text style={styles.bookingText}>Date: xx-xx-20xx</Text>
-          <Text style={styles.bookingText}>Time: xx:xx::xx</Text>
+          <Text style={styles.bookingTitle}>Upcoming Booking:</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : latestBooking ? (
+            <>
+              <Text style={styles.bookingText}>Date: {latestBooking.date}</Text>
+              <Text style={styles.bookingText}>Time: {latestBooking.startTime}</Text>
+            </>
+          ) : (
+            <Text style={styles.bookingText}>No upcoming booking</Text>
+          )}
         </View>
       </View>
       <ActionButton text="Upload Timetable" onPress={() => navigation.navigate('UploadTimetable')} />
-      <ActionButton text="Consultation History" onPress={() => {}} />
       <ActionButton text="Edit Profile" onPress={() => navigation.navigate('EditProfile')} />
       <ActionButton text="Log Out" onPress={handleLogout} />
     </ScrollView>
