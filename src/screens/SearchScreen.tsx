@@ -208,7 +208,7 @@ const SearchScreen = () => {
         Alert.alert('失败', msg);
         return;
       }
-  Alert.alert('成功', '预约已创建');
+  Alert.alert('Success', 'Appointment Booked Successfully');
   const bookedKey = `${body.date}|${selectedObj.startTime}|${selectedObj.endTime}`;
   setBookedSlots(prev => { const next = new Set(prev); next.add(bookedKey); return next; });
   setSelectedKey(null); setSelectedObj(null);

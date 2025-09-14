@@ -25,6 +25,19 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
+  // Safely parse JSON to avoid "Unexpected end of input" when body is empty
+  const parseJsonSafely = async (res: any) => {
+    const text = await res.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      // Re-throw with clearer message but log original for debugging
+      console.warn('Failed to parse JSON from', res?.url, 'status:', res?.status, 'body:', text);
+      throw new Error('Received invalid JSON from server');
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
@@ -47,22 +60,25 @@ const ProfileScreen = () => {
           ]);
 
           if (!profileRes.ok) throw new Error('Failed to fetch profile');
-          const profileData = await profileRes.json();
+          const profileData = await parseJsonSafely(profileRes);
+          if (!profileData) throw new Error('Profile response was empty');
+          if (isActive) setProfile(profileData);
 
-          if (bookingRes.ok) {
-            const bookingData = await bookingRes.json();
-            if (isActive) setLatestBooking(bookingData);
-          } else if (bookingRes.status !== 404) {
-            // Don't throw for 404, it just means no booking
+          // Handle booking: 404/204/no body => no upcoming booking
+          if (bookingRes.status === 404 || bookingRes.status === 204) {
+            if (isActive) setLatestBooking(null);
+          } else if (bookingRes.ok) {
+            const bookingData = await parseJsonSafely(bookingRes);
+            if (isActive) setLatestBooking(bookingData ?? null);
+          } else {
+            // Non-OK and not 404 => error
             throw new Error('Failed to fetch booking');
-          }
-
-          if (isActive) {
-            setProfile(profileData);
           }
         } catch (err) {
           if (isActive) {
-            Alert.alert('Error', err instanceof Error ? err.message : 'An unexpected error occurred.');
+            // Show friendly error, log the technical details
+            console.warn('Profile/Booking load error:', err);
+            Alert.alert('Error', 'Could not load profile or booking data. Please try again.');
           }
         } finally {
           if (isActive) setLoading(false);
@@ -89,7 +105,7 @@ const ProfileScreen = () => {
           onPress: async () => {
             try {
               const token = await AsyncStorage.getItem('jwtToken');
-              await fetch('http://10.0.2.2:8080/api/profile/logout', {
+              await fetch('http://10.0.2.2:8080/api/auth/logout', {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
