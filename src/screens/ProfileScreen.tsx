@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
+import { parseJsonSafely } from '../utils/http';
 
 type RootStackParamList = {
   Profile: undefined;
@@ -25,18 +26,6 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  // Safely parse JSON to avoid "Unexpected end of input" when body is empty
-  const parseJsonSafely = async (res: any) => {
-    const text = await res.text();
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      // Re-throw with clearer message but log original for debugging
-      console.warn('Failed to parse JSON from', res?.url, 'status:', res?.status, 'body:', text);
-      throw new Error('Received invalid JSON from server');
-    }
-  };
 
   useFocusEffect(
     React.useCallback(() => {
